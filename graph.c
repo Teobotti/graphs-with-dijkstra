@@ -4,8 +4,11 @@
 #include <limits.h>
 
 #define R 50
-#define LINE 5000
-#define INFINITY 9999999
+#define LINE 3000
+#define INFINITY 99999999
+#define HEAP_PARENT(i) (i/2)
+#define HEAP_LEFT(i) (2*i)
+#define HEAP_RIGHT(i) (2*i+1)
 #define START_NODE 0
 /*
  *  OPEN TESTS
@@ -30,6 +33,13 @@ void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head);
 void push(struct path_node** head, int id_grafo, int sumOfPath);
 void append(struct path_node** head_ref, int id_grafo, int sumOfPath);
 void insert(struct path_node** prev_node, int id_grafo, int sumOfPath);
+
+
+void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n);
+void min_heapify( int A[][2],  int i,  int n);
+void heap_decrease_key( int heap[][2],  int u,  int weight,  int n);
+int heap_extract_min( int A[][2],  int n,  int *node_index);
+void build_min_heap( int A[][2],  int n);
 
 
 int main(int argc, char * argv[]) {
@@ -140,21 +150,44 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_graf
     //fputs("Entro funzione aggiungi...\n", stdout);
     char *read = malloc(sizeof(char)*LINE);
     int *matrix = malloc(sizeof(int)*nNodi*nNodi);
+    int  all_equal=0, no_path=0;
+    int sumOfPath=0;
 
     for(int i=0; i<nNodi;i++) {
         int cont=0;
         if(fgets(read,LINE,stdin)!=NULL) {
             char *token = strtok(read, ",");
             while (token) {
-                int tk = atoi(token);
-                matrix[i * nNodi + cont] = tk;
+                int tk = (int)strtol(token,NULL,10);
+                if(i!=0 || cont!=0) {
+                    if(tk == matrix[0]){ //se sono tutti uguali
+                        all_equal++;
+                    }
+                }
+                if(i==0 && cont > 0) { //se sono tutti 0 sulla prima riga -> nessun nodo raggiungibile
+                    if(tk == 0) {
+                        no_path++;
+                    }
+                }
+                if(tk ==0) {
+                    matrix[i * nNodi + cont] = INFINITY;
+                } else {
+                    matrix[i * nNodi + cont] = tk;
+                }
                 token = strtok(NULL, ",");
                 cont++;
             }
         }
     }
 
-    int sumOfPath = dijkstra_sum_path(matrix,nNodi);
+    if(no_path != nNodi-1) {
+        if(all_equal == nNodi*nNodi-1) {
+            sumOfPath = matrix[1]*(nNodi-1);
+        } else {
+            sumOfPath = dijkstra_sum_path(matrix, nNodi);
+        }
+    }
+
     add_to_rank(k,id_grafo,sumOfPath, lista_grafi);
 
     //fprintf(stdout,"Sum of paths is: %d\n", sumOfPath);
@@ -165,52 +198,146 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_graf
     free(matrix);
 }
 
-int dijkstra_sum_path(int *G, int nNodi) {
+//---------------------------------------------//
 
-    int cost[nNodi][nNodi],distance[nNodi];
-    int visited[nNodi],count,mindistance,i,j,sumOfPath=0;
-    int nextnode = 0;
+void min_heapify( int A[][2],  int i,  int n) {
+    int l = HEAP_LEFT(i);
+    int r = HEAP_RIGHT(i);
+    int smallest = 0;
 
-    for(i=0; i < nNodi; i++) {
-        for (j = 0; j < nNodi; j++) {
-            if (G[i * nNodi + j] == 0)
-                cost[i][j] = INFINITY;
-            else
-                cost[i][j] = G[i * nNodi + j];
+    if(l <= n && A[l-1][0] < A[i-1][0]) {
+        smallest = l;
+    } else {
+        smallest = i;
+    }
+    if(r <= n && A[r-1][0] < A[smallest-1][0]) {
+        smallest = r;
+    }
+    if(smallest != i) {
+        int temp1 = A[i-1][0];
+        int temp2 = A[i-1][1];
+
+        A[i-1][0] = A[smallest-1][0];
+        A[i-1][1] = A[smallest-1][1];
+        A[smallest-1][0] = temp1;
+        A[smallest-1][1] = temp2;
+
+        min_heapify(A, smallest, n);
+    }
+}
+
+void build_min_heap( int A[][2],  int n) {
+    for(int i = (n/2); i > 0; i--) {
+        min_heapify(A, i, n);
+    }
+}
+
+int heap_extract_min( int A[][2],  int n,  int *node_index) {
+    if (n < 1) {
+        printf("error: underflow\n");
+        return -1;
+    }
+
+    int min = A[0][0];
+    int u = A[0][1];
+
+    if (n > 1) {
+        A[0][0] = A[n - 1][0];
+        A[0][1] = A[n - 1][1];
+        build_min_heap(A, n - 1);
+        //min_heapify(A, 1, n - 1);
+    }
+    *node_index = u;
+    return min;
+}
+
+void heap_decrease_key( int heap[][2],  int u,  int weight,  int n) {
+    for(int i = 0; i < n; i++) {
+        if(heap[i][1] == u) {
+            if(weight < heap[i][0]) {
+                heap[i][0] = weight;
+                int parent = HEAP_PARENT(i);
+                while(i > 0 && heap[parent][0] > heap[i][0]) {
+                    //swap
+                    int temp1 = heap[parent][0];
+                    int temp2 = heap[parent][1];
+                    heap[parent][0] = heap[i][0];
+                    heap[parent][1] = heap[i][1];
+                    heap[i][0] = temp1;
+                    heap[i][1] = temp2;
+                    i = parent;
+                    parent = HEAP_PARENT(i);
+                }
+            }
+            break;
         }
     }
+}
 
-    for(i=0; i < nNodi; i++) {
-        distance[i]=cost[START_NODE][i]; //lascio 0 i nodi non raggiungibili come da specifica
-        visited[i]=0;
+void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n) {
+
+    int weight = distance[u][0] + w;
+
+    if(distance[v][0] > weight) {
+        distance[v][0] = weight;
+        distance[v][1] = u;
+        heap_decrease_key(heap, v, weight, n);
     }
-    distance[START_NODE]=0;
-    visited[START_NODE]=1;
-    count=1;
-    while(count < nNodi - 1)
-    {
-        mindistance=INFINITY;
-        for(i=0; i < nNodi; i++) {
-            if (distance[i] < mindistance && !visited[i]) {
-                mindistance = distance[i];
-                nextnode = i;
+}
+
+int dijkstra_sum_path(int * graph, int nNodi) { //chiamata 32 volte
+
+    int heap[nNodi][2];
+    int S[nNodi];
+    int distance[nNodi][2];
+
+    for (int i = 0; i < nNodi; i++) {
+        distance[i][0] = INFINITY;
+        distance[i][1] = INFINITY;
+        heap[i][0] = graph[i];
+        heap[i][1] = i;
+        S[i] = 0;
+    }
+
+    distance[START_NODE][0] = 0;
+    distance[START_NODE][1] = 0;
+    heap[START_NODE][0] = 0;
+    int heap_size = nNodi;
+    build_min_heap(heap, heap_size);
+
+    while (heap_size > 0) {
+        int u = -1;
+        int min_val = heap_extract_min(heap, heap_size, &u); //chiamata nnodi volte
+
+        if (u == -1) {
+            printf("unexpected case\n");
+            break;
+        }
+
+        S[u] = 1;
+        heap_size--;
+        if (min_val == (int) -1) {
+            break;
+        } else {
+            for (int v = 0; v < nNodi; v++) {
+                if(u!=v) { //ignoro autoanelli
+                    int w = graph[u * nNodi + v];
+                    if(w < INFINITY) {
+                        if (w != (int) -1 && S[v] != 1) {
+                            relax(heap, distance, u, v, w, heap_size); //chiamata al più per ogni nodo
+                        }
+                    }
+                }
             }
         }
-        visited[nextnode]=1;
-        for(i=0; i < nNodi; i++) {
-            if (!visited[i])
-                if (mindistance + cost[nextnode][i] < distance[i]) {
-                    distance[i] = mindistance + cost[nextnode][i];
-                }
-        }
-        count++;
     }
-    for(i=0; i<nNodi;i++) {
-        if(distance[i]< INFINITY) {
-            sumOfPath = sumOfPath + distance[i];
-        }
-    }
-    //fprintf(stdout,"The sum of paths from 0 to nodes is %d\n", sumOfPath);
 
-    return sumOfPath;
+    int sumOfpath = 0;
+    for (int i = 0; i < nNodi; i++) {
+        if(distance[i][0] < INFINITY) {
+            sumOfpath = sumOfpath + distance[i][0];
+        }
+    }
+    return sumOfpath;
+
 }
