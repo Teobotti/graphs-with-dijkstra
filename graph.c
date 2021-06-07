@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define R 50
 #define LINE 3000
 #define INFINITY 99999999
@@ -21,7 +20,6 @@ void insert_max_heap(struct graph *array, int id_grafo, int camMin, int * size, 
 void max_heapify(struct graph *array, int *size, int i);
 void swap(struct graph *a, struct graph *b);
 void topKheap(struct graph *heap, int k);
-
 void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n);
 void min_heapify( int A[][2],  int i,  int n);
 int dijkstra_sum_path(int * graph, int nNodi);
@@ -30,13 +28,11 @@ int heap_extract_min( int A[][2],  int n,  int *node_index);
 void build_min_heap( int A[][2],  int n);
 
 
-
 int main() {
     int d,k;
     int check = 0;
     int id_grafo=0;
     char *riga = malloc(sizeof(char) * R);
-
 
     if(fscanf(stdin, "%d %d\n", &d, &k)!=0) { // salvo d = nnodi e k=lunghezza del rank
         struct graph *heap = (struct graph*)malloc(sizeof(struct graph)*k);
@@ -62,10 +58,6 @@ int main() {
 }
 
 
-
-
-
-
 void topKheap(struct graph *heap, int k) {
     for(int i=0; i<k;i++){
         if(i==k-1){
@@ -77,45 +69,12 @@ void topKheap(struct graph *heap, int k) {
     fputc('\n',stdout);
 }
 
-
-
-
-
-
 void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size) {
     char *read = malloc(sizeof(char)*LINE);
     int *matrix = malloc(sizeof(int)*nNodi*nNodi);
-    //int  all_equal=0;
-    //int no_path=0;
+    int  all_equal=0;
+    int no_path=0;
     int sumOfPath=0;
-
-    /*
-    for(int i=0; i<nNodi;i++) {
-        int cont=0;
-        if(fgets(read,LINE,stdin)!=NULL) {
-            char *token = strtok(read, ",");
-            while (token) {
-                int tk = (int)strtol(token,NULL,10);
-                if(i!=0 || cont!=0) {
-                    if(tk == matrix[0]){ //se sono tutti uguali
-                        all_equal++;
-                    }
-                }
-                if(i==0 && cont > 0) { //se sono tutti 0 sulla prima riga -> nessun nodo raggiungibile
-                    if(tk == 0) {
-                        no_path++;
-                    }
-                }
-                if(tk ==0) {
-                    matrix[i * nNodi + cont] = INFINITY;
-                } else {
-                    matrix[i * nNodi + cont] = tk;
-                }
-                token = strtok(NULL, ",");
-                cont++;
-            }
-        }
-    }*/
 
     for(int i = 0; i<nNodi; i++) {
         if(fgets(read,LINE,stdin)!=NULL) {
@@ -135,6 +94,16 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
                     } else {
                         matrix[i*nNodi + cont] = num;
                     }
+                    if(i==0 && cont > 0) {
+                        if(num==0) {
+                            no_path++;
+                        }
+                    }
+                    if(i!=cont) {
+                        if(num == matrix[1]) {
+                            all_equal++;
+                        }
+                    }
                     num = 0;
                     cont++;
                 } else if(read[j]=='\n') {
@@ -143,6 +112,16 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
                     } else {
                         matrix[i*nNodi + cont] = num;
                     }
+                    if(i==0 && cont > 0) {
+                        if(num==0) {
+                            no_path++;
+                        }
+                    }
+                    if(i!=cont) {
+                        if(num == matrix[1]) {
+                            all_equal++;
+                        }
+                    }
                     break;
                 }
             }
@@ -150,7 +129,13 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
 
     }
 
-    sumOfPath = dijkstra_sum_path(matrix,nNodi);
+    if(all_equal == nNodi*nNodi-nNodi) {
+        sumOfPath = matrix[1]*nNodi-1;
+    } else if(no_path == nNodi-1){
+        sumOfPath = 0;
+    } else {
+        sumOfPath = dijkstra_sum_path(matrix,nNodi);
+    }
 
     insert_max_heap(heap, id_grafo, sumOfPath, size, k);
     //fprintf(stdout,"Sum of paths is: %d for graph : %d\n", sumOfPath, id_grafo);
@@ -158,10 +143,6 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
     free(matrix);
 }
 
-
-
-
-//---------------------------------------------//
 
 void min_heapify( int A[][2],  int i,  int n) {
      int l = HEAP_LEFT(i);
@@ -177,13 +158,14 @@ void min_heapify( int A[][2],  int i,  int n) {
         smallest = r;
     }
     if(smallest != i) {
-         int temp1 = A[i-1][0];
-         int temp2 = A[i-1][1];
+        //swap
+        int temp1 = A[i - 1][0];
+        int temp2 = A[i - 1][1];
 
-        A[i-1][0] = A[smallest-1][0];
-        A[i-1][1] = A[smallest-1][1];
-        A[smallest-1][0] = temp1;
-        A[smallest-1][1] = temp2;
+        A[i - 1][0] = A[smallest - 1][0];
+        A[i - 1][1] = A[smallest - 1][1];
+        A[smallest - 1][0] = temp1;
+        A[smallest - 1][1] = temp2;
 
         min_heapify(A, smallest, n);
     }
@@ -248,6 +230,7 @@ void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n) {
     }
 }
 
+
 int dijkstra_sum_path(int * graph, int nNodi) { //chiamata 32 volte
 
     int heap[nNodi][2];
@@ -272,10 +255,6 @@ int dijkstra_sum_path(int * graph, int nNodi) { //chiamata 32 volte
         int u = -1;
         int min_val = heap_extract_min(heap, heap_size, &u); //chiamata nnodi volte
 
-        if (u == -1) {
-            printf("unexpected case\n");
-            break;
-        }
 
         S[u] = 1;
         heap_size--;
@@ -299,7 +278,6 @@ int dijkstra_sum_path(int * graph, int nNodi) { //chiamata 32 volte
             }
         }
     }
-
     int sumOfpath = 0;
     for (int i = 0; i < nNodi; i++) {
         if(distance[i][0] < INFINITY) {
@@ -362,74 +340,3 @@ void max_heapify(struct graph *array, int *size, int i) {
 }
 
 
-/*
-void insert_in_list(int id_grafo, int sumOfPath, int *size, int k, struct rank_list **head, struct rank_list **tail) {
-
-    if((*head)==NULL) {
-        push(head,id_grafo,sumOfPath);
-        *size = *size + 1;
-        return;
-    }
-    if(sumOfPath < (*head)->score ) { //nuovo è minore di head
-        push(head,id_grafo,sumOfPath);
-        if(*size == 1) { //se è il secondo elemento che aggiungo
-            (*tail) = (*head)->next;
-        } else if(*size == k) {
-            (*tail) = (*tail)->prev;
-        }
-        if(*size < k) {
-            *size = *size + 1;
-        }
-        return;
-    } else { //caso in cui new è >= head
-        if((*head)->next == NULL) { //secondo elemento da aggiungere
-            append(head,id_grafo,sumOfPath);
-            (*tail) = (*head)->next;
-            *size = *size + 1;
-            return;
-        }
-
-        if(sumOfPath >= (*tail)->score) {
-            if(*size < k) {
-                append(tail,id_grafo,sumOfPath);
-                (*tail) = (*tail)->next;
-                *size = *size + 1;
-                return;
-            }
-            return;
-        }
-
-        if(sumOfPath > (*head)->score && sumOfPath < (*tail)->score) {
-            struct rank_list *traveler_up = *head;
-            struct rank_list *traveler_down = *tail;
-            for(int i = 0; i< k; k++) {
-                if(traveler_up->next->score > sumOfPath) {
-                    insertAfter(&traveler_up,id_grafo,sumOfPath);
-                    if(*size < k) {
-                        *size = *size +1;
-                    } else if(*size == k) {
-                        (*tail) = (*tail)->prev;
-                    }
-                    return;
-                } else if(traveler_down->prev->score < sumOfPath && traveler_down->score > sumOfPath) {
-                    insertAfter(&traveler_down->prev,id_grafo,sumOfPath);
-                    if(*size < k) {
-                        *size = *size +1;
-                    } else if(*size == k) {
-                        (*tail) = (*tail)->prev;
-                    }
-                    return;
-                }
-                if(traveler_up->next!= NULL) {
-                    traveler_up = traveler_up->next;
-                }
-                if(traveler_down->prev != NULL) {
-                    traveler_down = traveler_down->prev;
-                }
-            }
-        }
-    }
-
-
-}
- */
