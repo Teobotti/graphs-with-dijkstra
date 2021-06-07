@@ -10,6 +10,7 @@
 #define HEAP_LEFT(i) (2*i)
 #define HEAP_RIGHT(i) (2*i+1)
 #define START_NODE 0
+#define EXP 10
 /*
  *  OPEN TESTS
  *  input_1 ---> output_1 YES
@@ -150,43 +151,43 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_graf
     //fputs("Entro funzione aggiungi...\n", stdout);
     char *read = malloc(sizeof(char)*LINE);
     int *matrix = malloc(sizeof(int)*nNodi*nNodi);
-    int  all_equal=0, no_path=0;
+    //int  all_equal=0, no_path=0;
     int sumOfPath=0;
 
-    for(int i=0; i<nNodi;i++) {
-        int cont=0;
+    for(int i = 0; i<nNodi; i++) {
         if(fgets(read,LINE,stdin)!=NULL) {
-            char *token = strtok(read, ",");
-            while (token) {
-                int tk = (int)strtol(token,NULL,10);
-                if(i!=0 || cont!=0) {
-                    if(tk == matrix[0]){ //se sono tutti uguali
-                        all_equal++;
+            int num = 0;
+            int cont = 0;
+            for(int j = 0; j< LINE;j++) {
+                if((int)read[j]-'0' >= 0 && (int)read[j]-'0' <= 9) {
+                    if(num ==0) {
+                        num = num + (int)read[j]-'0';
+                    } else {
+                        num =  num * EXP;
+                        num = num + (int)read[j]-'0';
                     }
-                }
-                if(i==0 && cont > 0) { //se sono tutti 0 sulla prima riga -> nessun nodo raggiungibile
-                    if(tk == 0) {
-                        no_path++;
+                } else if(read[j] == ',') {
+                    if(num == 0) {
+                        matrix[i*nNodi + cont] = INFINITY;
+                    } else {
+                        matrix[i*nNodi + cont] = num;
                     }
+                    num = 0;
+                    cont++;
+                } else if(read[j]=='\n') {
+                    if(num == 0) {
+                        matrix[i*nNodi + cont] = INFINITY;
+                    } else {
+                        matrix[i*nNodi + cont] = num;
+                    }
+                    break;
                 }
-                if(tk ==0) {
-                    matrix[i * nNodi + cont] = INFINITY;
-                } else {
-                    matrix[i * nNodi + cont] = tk;
-                }
-                token = strtok(NULL, ",");
-                cont++;
             }
         }
+
     }
 
-    if(no_path != nNodi-1) {
-        if(all_equal == nNodi*nNodi-1) {
-            sumOfPath = matrix[1]*(nNodi-1);
-        } else {
-            sumOfPath = dijkstra_sum_path(matrix, nNodi);
-        }
-    }
+    sumOfPath = dijkstra_sum_path(matrix,nNodi);
 
     add_to_rank(k,id_grafo,sumOfPath, lista_grafi);
 
