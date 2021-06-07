@@ -10,6 +10,7 @@
 #define HEAP_LEFT(i) (2*i)
 #define HEAP_RIGHT(i) (2*i+1)
 #define START_NODE 0
+#define EXP 10
 
 typedef struct graph {
     int id_grafo, camMin;
@@ -28,25 +29,24 @@ void heap_decrease_key( int heap[][2],  int u,  int weight,  int n);
 int heap_extract_min( int A[][2],  int n,  int *node_index);
 void build_min_heap( int A[][2],  int n);
 
-//void insert_in_list(int grafo, int path, int *pInt, int k, struct rank_list **pList, struct rank_list **pList1);
-//void topK_list(struct rank_list *head,int k);
 
-int main(int argc, char * argv[]) {
+
+int main() {
     int d,k;
     int check = 0;
     int id_grafo=0;
-    char *read = malloc(sizeof(char)*R);
+    char *riga = malloc(sizeof(char) * R);
 
 
     if(fscanf(stdin, "%d %d\n", &d, &k)!=0) { // salvo d = nnodi e k=lunghezza del rank
         struct graph *heap = (struct graph*)malloc(sizeof(struct graph)*k);
         int size = 0;
         while (check == 0) {
-            if (fgets(read, R, stdin) != NULL) {
-                if (read[0] == 'A' && read[1] == 'g') {
+            if (fgets(riga, R, stdin) != NULL) {
+                if (riga[0] == 'A' && riga[1] == 'g') {
                     aggiungiGrafo(d, k, id_grafo, heap, &size);
                     id_grafo++;
-                } else if (read[0] == 'T' && read[1] == 'o') {
+                } else if (riga[0] == 'T' && riga[1] == 'o') {
                     topKheap(heap,size);
                     //topK_list(head,k);
                 }
@@ -57,7 +57,7 @@ int main(int argc, char * argv[]) {
         free(heap);
     }
 
-    free(read);
+    free(riga);
     return 0;
 }
 
@@ -85,9 +85,11 @@ void topKheap(struct graph *heap, int k) {
 void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size) {
     char *read = malloc(sizeof(char)*LINE);
     int *matrix = malloc(sizeof(int)*nNodi*nNodi);
-    int  all_equal=0, no_path=0;
+    //int  all_equal=0;
+    //int no_path=0;
     int sumOfPath=0;
 
+    /*
     for(int i=0; i<nNodi;i++) {
         int cont=0;
         if(fgets(read,LINE,stdin)!=NULL) {
@@ -113,16 +115,43 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
                 cont++;
             }
         }
-    }
-    if(no_path != nNodi-1) {
-        if(all_equal == nNodi*nNodi-1) {
-            sumOfPath = matrix[1]*(nNodi-1);
-        } else {
-            sumOfPath = dijkstra_sum_path(matrix, nNodi);
+    }*/
+
+    for(int i = 0; i<nNodi; i++) {
+        if(fgets(read,LINE,stdin)!=NULL) {
+            int num = 0;
+            int cont = 0;
+            for(int j = 0; j< LINE;j++) {
+                if((int)read[j]-'0' >= 0 && (int)read[j]-'0' <= 9) {
+                    if(num ==0) {
+                        num = num + (int)read[j]-'0';
+                    } else {
+                        num =  num * EXP;
+                        num = num + (int)read[j]-'0';
+                    }
+                } else if(read[j] == ',') {
+                    if(num == 0) {
+                        matrix[i*nNodi + cont] = INFINITY;
+                    } else {
+                        matrix[i*nNodi + cont] = num;
+                    }
+                    num = 0;
+                    cont++;
+                } else if(read[j]=='\n') {
+                    if(num == 0) {
+                        matrix[i*nNodi + cont] = INFINITY;
+                    } else {
+                        matrix[i*nNodi + cont] = num;
+                    }
+                    break;
+                }
+            }
         }
+
     }
 
-    //insert_in_list(id_grafo,sumOfPath, size,k, head, tail);
+    sumOfPath = dijkstra_sum_path(matrix,nNodi);
+
     insert_max_heap(heap, id_grafo, sumOfPath, size, k);
     //fprintf(stdout,"Sum of paths is: %d for graph : %d\n", sumOfPath, id_grafo);
     free(read);
@@ -255,7 +284,12 @@ int dijkstra_sum_path(int * graph, int nNodi) { //chiamata 32 volte
         } else {
             for (int v = 0; v < nNodi; v++) {
                 if(u!=v) { //ignoro autoanelli
-                    int w = graph[u * nNodi + v];
+                    int w = 0;
+                    if(graph[u*nNodi+v]==0) {
+                        w = INFINITY;
+                    } else {
+                        w = graph[u * nNodi + v];
+                    }
                     if(w < INFINITY) {
                         if (w != (int) -1 && S[v] != 1) {
                             relax(heap, distance, u, v, w, heap_size); //chiamata al più per ogni nodo
