@@ -4,8 +4,8 @@
 
 
 #define R 50
-#define LINE 5000
-#define INFINITY 9999999
+#define LINE 3000
+#define INFINITY 99999999
 #define HEAP_PARENT(i) (i/2)
 #define HEAP_LEFT(i) (2*i)
 #define HEAP_RIGHT(i) (2*i+1)
