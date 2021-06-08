@@ -17,7 +17,7 @@ typedef struct graph {
 
 
 void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size);
-void topKheap(struct graph *heap, int k);
+void topKheap(struct graph *heap, int size);
 
 void insert_max_heap(struct graph *array, int id_grafo, int camMin, int * size, int maxSize);
 void max_heapify(struct graph *array, int *size, int i);
@@ -28,7 +28,7 @@ int dijkstra_sum_path(int * graph, int nNodi);
 void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n);
 void min_heapify( int A[][2],  int i,  int n);
 void heap_decrease_key( int heap[][2],  int u,  int weight,  int n);
-int heap_extract_min( int A[][2],  int n,  int *node_index);
+int heap_extract_min(int heap[][2], int size, int *node_index);
 void build_min_heap( int A[][2],  int n);
 
 int main() {
@@ -58,7 +58,6 @@ int main() {
     free(riga);
     return 0;
 }
-
 
 void topKheap(struct graph *heap, int size) {
 
@@ -143,13 +142,11 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
         free(matrix);
         return;
     } else {
-        //insert(heap, id_grafo, sumOfPath, size, k);
         insert_max_heap(heap,id_grafo,sumOfPath,size,k);
         free(read);
         free(matrix);
     }
 }
-
 
 void min_heapify( int A[][2],  int i,  int n) {
     int l = HEAP_LEFT(i);
@@ -184,18 +181,18 @@ void build_min_heap( int A[][2],  int n) {
     }
 }
 
-int heap_extract_min( int A[][2],  int n,  int *node_index) {
-    if (n < 1) {
+int heap_extract_min(int heap[][2], int size, int *node_index) {
+    if (size < 1) {
         printf("error: underflow\n");
         return -1;
     }
-    int min = A[0][0];
-    int u = A[0][1];
+    int min = heap[0][0];
+    int u = heap[0][1];
 
-    if (n > 1) {
-        A[0][0] = A[n - 1][0];
-        A[0][1] = A[n - 1][1];
-        build_min_heap(A, n - 1);
+    if (size > 1) {
+        heap[0][0] = heap[size - 1][0];
+        heap[0][1] = heap[size - 1][1];
+        build_min_heap(heap, size - 1);
     }
     *node_index = u;
     return min;
@@ -241,6 +238,7 @@ int dijkstra_sum_path(int * graph, int nNodi) {
     int visited[nNodi];
     int distance[nNodi][2];
 
+    //Inizialize single source
     for (int i = 0; i < nNodi; i++) {
         distance[i][0] = INFINITY;
         distance[i][1] = INFINITY;
@@ -248,10 +246,10 @@ int dijkstra_sum_path(int * graph, int nNodi) {
         heap[i][1] = i;
         visited[i] = 0;
     }
-
     distance[START_NODE][0] = 0;
     distance[START_NODE][1] = 0;
     heap[START_NODE][0] = 0;
+
     int heap_size = nNodi;
     build_min_heap(heap, heap_size);
 
@@ -287,9 +285,7 @@ int dijkstra_sum_path(int * graph, int nNodi) {
         }
     }
     return sumOfpath;
-
 }
-
 
 void insert_max_heap(struct graph *array, int id_grafo, int camMin, int * size, int maxSize) {
 
@@ -304,20 +300,20 @@ void insert_max_heap(struct graph *array, int id_grafo, int camMin, int * size, 
             (array[0]).camMin = camMin;
             (array[0]).id_grafo = id_grafo;
             int i = 0;
-            int l = 2 * i + 1;
-            int r = 2 * i + 2;
+            int l = HEAP_LEFT(i) + 1;
+            int r = HEAP_RIGHT(i) + 1;
             //procedura detta heap-increase-key
             while((l <= maxSize && r <= maxSize) && ((array[i]).camMin < (array[l]).camMin || (array[i]).camMin < (array[r]).camMin)) {
                 if((array[l]).camMin > (array[r]).camMin) {
                     swap(&array[i], &array[l]);
                     i = l;
-                    l = 2 * i + 1;
-                    r = 2 * i + 2;
+                    l = HEAP_LEFT(i) + 1;
+                    r = HEAP_RIGHT(i) + 1;
                 } else if( (array[r]).camMin > (array[l]).camMin) {
                     swap(&array[i], &array[r]);
                     i = r;
-                    l = 2 * i + 1;
-                    r = 2 * i + 2;
+                    l = HEAP_LEFT(i) + 1;
+                    r = HEAP_RIGHT(i) + 1;
                 }
             }
 
@@ -333,7 +329,6 @@ void insert_max_heap(struct graph *array, int id_grafo, int camMin, int * size, 
         }
     }
 }
-
 
 void swap(struct graph *a, struct graph *b) {
     struct graph temp = *b;
