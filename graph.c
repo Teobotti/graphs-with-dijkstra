@@ -27,10 +27,10 @@ typedef struct path_node {
     struct path_node * next;
 } path_node;
 
-void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_grafi);
+void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_grafi, int *max, int * size);
 int dijkstra_sum_path(int *G, int nNodi);
 void topK(struct path_node* head, int k);
-void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head);
+void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head, int * max, int * size);
 void push(struct path_node** head, int id_grafo, int sumOfPath);
 void append(struct path_node** head_ref, int id_grafo, int sumOfPath);
 void insert(struct path_node** prev_node, int id_grafo, int sumOfPath);
@@ -48,6 +48,7 @@ int main(int argc, char * argv[]) {
     int check = 0;
     int id_grafo=0;
     char *read = malloc(sizeof(char)*R);
+    int max_found = 0, size = 0;
 
     if(fscanf(stdin, "%d %d\n", &d, &k)!=0) { // salvo d = nnodi e k=lunghezza del rank
 
@@ -56,7 +57,7 @@ int main(int argc, char * argv[]) {
         while (check == 0) {
             if (fgets(read, R, stdin) != NULL) {
                 if (read[0] == 'A' && read[1] == 'g') {
-                    aggiungiGrafo(d, k, id_grafo, &head);
+                    aggiungiGrafo(d, k, id_grafo, &head, &max_found, &size);
                     id_grafo++;
                 } else if (read[0] == 'T' && read[1] == 'o') {
                     topK(head, k);
@@ -76,8 +77,14 @@ void topK(struct path_node* head, int k) {
 
     for(int i=0; i<k; i++) {
         if(head!=NULL) {
-            fprintf(stdout, "%d ", head->id);
-            head = head->next;
+            if (head->next == NULL) {
+                fprintf(stdout, "%d", head->id);
+                head = head->next;
+                break;
+            } else {
+                fprintf(stdout, "%d ", head->id);
+                head = head->next;
+            }
         }
     }
     fputc('\n',stdout);
@@ -117,20 +124,32 @@ void insert(struct path_node** prev_node, int id_grafo, int sumOfPath) {
 }
 
 
-void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head) { //soluzione naive aggiungo al rank nella posizione corretta
+void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head, int * max, int * size) { //soluzione naive aggiungo al rank nella posizione corretta
 
     struct path_node *traveler = *head;
 
     if (id_grafo == 0) {
         push(head, id_grafo, sumOfPath);
+        (*max) = sumOfPath;
         return;
     }
 
     if (sumOfPath < (*head)->camMin) {
         push(head, id_grafo, sumOfPath);
+        if((*size) < k) {
+            (*size) = (*size) + 1;
+        }
         return;
     } else if (sumOfPath > (*head)->camMin && (*head)->next == NULL) {
         append(head, id_grafo, sumOfPath);
+        (*max) = sumOfPath;
+        if((*size) < k) {
+            (*size) = (*size) + 1;
+        }
+        return;
+    }
+
+    if((*size) == k && sumOfPath > (*max)) { //se l'elemento che sto inserendo è maggiore del più grande già inserito
         return;
     }
 
@@ -138,6 +157,9 @@ void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head) { //
         if (traveler->next->camMin >= sumOfPath) {
             //traveler = next per inserirlo dopo
             insert(&traveler, id_grafo, sumOfPath);
+            if((*size) < k) {
+                (*size) = (*size) + 1;
+            }
             return;
         } else {
             traveler = traveler->next;
@@ -145,13 +167,18 @@ void add_to_rank(int k,int id_grafo,int sumOfPath, struct path_node **head) { //
     }
 
     append(&traveler,id_grafo,sumOfPath);
+    if((*size) < k) {
+        (*size) = (*size) + 1;
+    }
+    (*max) = sumOfPath;
+
 }
 
-void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_grafi) {
+void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_grafi, int * max, int *size) {
     //fputs("Entro funzione aggiungi...\n", stdout);
     char *read = malloc(sizeof(char)*LINE);
     int *matrix = malloc(sizeof(int)*nNodi*nNodi);
-    //int  all_equal=0, no_path=0;
+    int  all_equal=0, no_path=0;
     int sumOfPath=0;
 
     for(int i = 0; i<nNodi; i++) {
@@ -172,6 +199,16 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_graf
                     } else {
                         matrix[i*nNodi + cont] = num;
                     }
+                    if(i==0 && cont > 0) {
+                        if(num==0) {
+                            no_path++;
+                        }
+                    }
+                    if(i!=cont) {
+                        if(num == matrix[1]) {
+                            all_equal++;
+                        }
+                    }
                     num = 0;
                     cont++;
                 } else if(read[j]=='\n') {
@@ -180,6 +217,16 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_graf
                     } else {
                         matrix[i*nNodi + cont] = num;
                     }
+                    if(i==0 && cont > 0) {
+                        if(num==0) {
+                            no_path++;
+                        }
+                    }
+                    if(i!=cont) {
+                        if(num == matrix[1]) {
+                            all_equal++;
+                        }
+                    }
                     break;
                 }
             }
@@ -187,9 +234,15 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct path_node **lista_graf
 
     }
 
-    sumOfPath = dijkstra_sum_path(matrix,nNodi);
+    if(all_equal == nNodi*nNodi-nNodi) {
+        sumOfPath = matrix[1]*nNodi-1;
+    } else if(no_path == nNodi-1){
+        sumOfPath = 0;
+    } else {
+        sumOfPath = dijkstra_sum_path(matrix,nNodi);
+    }
 
-    add_to_rank(k,id_grafo,sumOfPath, lista_grafi);
+    add_to_rank(k,id_grafo,sumOfPath, lista_grafi, max, size);
 
     //fprintf(stdout,"Sum of paths is: %d\n", sumOfPath);
 
