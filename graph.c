@@ -15,6 +15,13 @@ typedef struct graph {
     int id_grafo, camMin;
 } graph;
 
+typedef struct dist {
+    int distanza, predecessor;
+}dist;
+
+typedef struct min_heap {
+    int weight, node;
+} min_heap;
 
 void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size);
 void topKheap(struct graph *heap, int size);
@@ -24,12 +31,11 @@ void max_heapify(struct graph *array, int *size, int i);
 void swap(struct graph *a, struct graph *b);
 
 int dijkstra_sum_path(int * graph, int nNodi);
-
-void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n);
-void min_heapify( int A[][2],  int i,  int n);
-void heap_decrease_key( int heap[][2],  int u,  int weight,  int n);
-int heap_extract_min(int heap[][2], int size, int *node_index);
-void build_min_heap( int A[][2],  int n);
+void relax( struct  min_heap *heap,  struct dist * distance,int u,  int v,  int w,  int n);
+void min_heapify( struct min_heap * A,  int i,  int n) ;
+int heap_extract_min(struct min_heap * heap, int size, int *node_index) ;
+void build_min_heap( struct min_heap * A,  int n);
+void heap_decrease_key( struct  min_heap *heap,  int u,  int weight,  int n);
 
 int main() {
     int d,k;
@@ -37,7 +43,7 @@ int main() {
     int id_grafo=0;
     char *riga = malloc(sizeof(char) * R);
 
-    if(fscanf(stdin, "%d %d\n", &d, &k)!=0) { // salvo d = nnodi e k=lunghezza del rank
+    if(fscanf(stdin, "%d %d\n", &d, &k)!=0) {
         struct graph *heap = (struct graph*)malloc(sizeof(struct graph)*k);
         int size = 0;
         while (check == 0) {
@@ -148,70 +154,65 @@ void aggiungiGrafo(int nNodi, int k, int id_grafo, struct graph *heap, int *size
     }
 }
 
-void min_heapify( int A[][2],  int i,  int n) {
+
+void swappy (struct min_heap * a, struct min_heap * b) {
+    struct min_heap temp = *b;
+    *b = *a;
+    *a = temp;
+}
+
+void min_heapify( struct min_heap * A,  int i,  int n) {
     int l = HEAP_LEFT(i);
     int r = HEAP_RIGHT(i);
     int smallest = 0;
 
-    if(l <= n && A[l-1][0] < A[i-1][0]) {
+    if(l <= n && A[l-1].weight < A[i-1].weight) {
         smallest = l;
     } else {
         smallest = i;
     }
-    if(r <= n && A[r-1][0] < A[smallest-1][0]) {
+    if(r <= n && A[r-1].weight < A[smallest-1].weight) {
         smallest = r;
     }
     if(smallest != i) {
-        //swap
-        int temp1 = A[i - 1][0];
-        int temp2 = A[i - 1][1];
-
-        A[i - 1][0] = A[smallest - 1][0];
-        A[i - 1][1] = A[smallest - 1][1];
-        A[smallest - 1][0] = temp1;
-        A[smallest - 1][1] = temp2;
-
+        swappy(&A[i-1], &A[smallest -1]);
         min_heapify(A, smallest, n);
     }
 }
 
-void build_min_heap( int A[][2],  int n) {
+
+
+void build_min_heap( struct min_heap * A,  int n) {
     for(int i = (n/2); i > 0; i--) {
         min_heapify(A, i, n);
     }
 }
 
-int heap_extract_min(int heap[][2], int size, int *node_index) {
+int heap_extract_min(struct min_heap * heap, int size, int *node_index) {
     if (size < 1) {
         printf("error: underflow\n");
         return -1;
     }
-    int min = heap[0][0];
-    int u = heap[0][1];
+    int min = heap[0].weight;
+    int u = heap[0].node;
 
     if (size > 1) {
-        heap[0][0] = heap[size - 1][0];
-        heap[0][1] = heap[size - 1][1];
+        heap[0].weight = heap[size - 1].weight;
+        heap[0].node = heap[size - 1].node;
         build_min_heap(heap, size - 1);
     }
     *node_index = u;
     return min;
 }
 
-void heap_decrease_key( int heap[][2],  int u,  int weight,  int n) {
+void heap_decrease_key( struct  min_heap *heap,  int u,  int weight,  int n) {
     for(int i = 0; i < n; i++) {
-        if(heap[i][1] == u) {
-            if(weight < heap[i][0]) {
-                heap[i][0] = weight;
+        if(heap[i].node == u) {
+            if(weight < heap[i].weight) {
+                heap[i].weight = weight;
                 int parent = HEAP_PARENT(i);
-                while(i > 0 && heap[parent][0] > heap[i][0]) {
-                    //swap
-                    int temp1 = heap[parent][0];
-                    int temp2 = heap[parent][1];
-                    heap[parent][0] = heap[i][0];
-                    heap[parent][1] = heap[i][1];
-                    heap[i][0] = temp1;
-                    heap[i][1] = temp2;
+                while(i > 0 && heap[parent].weight > heap[i].weight) {
+                    swappy(&heap[parent], &heap[i]);
                     i = parent;
                     parent = HEAP_PARENT(i);
                 }
@@ -221,12 +222,12 @@ void heap_decrease_key( int heap[][2],  int u,  int weight,  int n) {
     }
 }
 
-void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n) {
+void relax( struct  min_heap *heap,  struct dist * distance,int u,  int v,  int w,  int n) {
 
-    int weight = distance[u][0] + w;
-    if(distance[v][0] > weight) {
-        distance[v][0] = weight;
-        distance[v][1] = u;
+    int weight = distance[u].distanza + w;
+    if(distance[v].distanza > weight) {
+        distance[v].distanza = weight;
+        distance[v].predecessor = u;
         heap_decrease_key(heap, v, weight, n);
     }
 }
@@ -234,21 +235,21 @@ void relax( int heap[][2],  int distance[][2],int u,  int v,  int w,  int n) {
 
 int dijkstra_sum_path(int * graph, int nNodi) {
 
-    int heap[nNodi][2];
-    int visited[nNodi];
-    int distance[nNodi][2];
+    int *visited = malloc(sizeof (int )*nNodi);
+    struct dist *distance = (struct dist *)malloc(sizeof (struct dist)*nNodi);
+    struct min_heap *heap = (struct min_heap *)malloc(sizeof (struct min_heap)*nNodi);
 
     //Inizialize single source
     for (int i = 0; i < nNodi; i++) {
-        distance[i][0] = INFINITY;
-        distance[i][1] = INFINITY;
-        heap[i][0] = graph[i];
-        heap[i][1] = i;
+        distance[i].distanza = INFINITY;
+        distance[i].predecessor = INFINITY;
+        heap[i].weight = graph[i];
+        heap[i].node = i;
         visited[i] = 0;
     }
-    distance[START_NODE][0] = 0;
-    distance[START_NODE][1] = 0;
-    heap[START_NODE][0] = 0;
+    distance[START_NODE].distanza = 0;
+    distance[START_NODE].predecessor = 0;
+    heap[START_NODE].weight = 0;
 
     int heap_size = nNodi;
     build_min_heap(heap, heap_size);
@@ -280,10 +281,15 @@ int dijkstra_sum_path(int * graph, int nNodi) {
     }
     int sumOfpath = 0;
     for (int i = 0; i < nNodi; i++) {
-        if(distance[i][0] < INFINITY) {
-            sumOfpath = sumOfpath + distance[i][0];
+        if(distance[i].distanza < INFINITY) {
+            sumOfpath = sumOfpath + distance[i].distanza;
         }
     }
+
+    free(distance);
+    free(heap);
+    free(visited);
+
     return sumOfpath;
 }
 
@@ -340,8 +346,8 @@ void max_heapify(struct graph *array, int *size, int i) {
     if(*size > 1) {
         {
             int largest = i;
-            int l = 2 * i + 1;
-            int r = 2 * i + 2;
+            int l = HEAP_LEFT(i) + 1;
+            int r = HEAP_RIGHT(i) + 1;
             if (l < *size && (array[l]).camMin > (array[largest]).camMin)
                 largest = l;
             if (r < *size && (array[r]).camMin > (array[largest]).camMin)
