@@ -34,7 +34,6 @@ int dijkstra_sum_path(int * graph, int nNodi);
 void relax( struct  min_heap *heap,  struct dist * distance,int u,  int v,  int w,  int n);
 void min_heapify( struct min_heap * A,  int i,  int n) ;
 int heap_extract_min(struct min_heap * heap, int size, int *node_index) ;
-void build_min_heap( struct min_heap * A,  int n);
 void heap_decrease_key( struct  min_heap *heap,  int u,  int weight,  int n);
 
 int main() {
@@ -181,13 +180,6 @@ void min_heapify( struct min_heap * A,  int i,  int n) {
 }
 
 
-
-void build_min_heap( struct min_heap * A,  int n) {
-    for(int i = (n/2); i > 0; i--) {
-        min_heapify(A, i, n);
-    }
-}
-
 int heap_extract_min(struct min_heap * heap, int size, int *node_index) {
     if (size < 1) {
         printf("error: underflow\n");
@@ -199,7 +191,9 @@ int heap_extract_min(struct min_heap * heap, int size, int *node_index) {
     if (size > 1) {
         heap[0].weight = heap[size - 1].weight;
         heap[0].node = heap[size - 1].node;
-        build_min_heap(heap, size - 1);
+        for(int i = ((size-1)/2); i > 0; i--) {
+            min_heapify(heap, i, size-1);
+        }
     }
     *node_index = u;
     return min;
@@ -252,7 +246,11 @@ int dijkstra_sum_path(int * graph, int nNodi) {
     heap[START_NODE].weight = 0;
 
     int heap_size = nNodi;
-    build_min_heap(heap, heap_size);
+
+    for(int i = (heap_size/2); i > 0; i--) {
+        min_heapify(heap, i, heap_size);
+    }
+
 
     while (heap_size > 0) {
         int u = -1;
