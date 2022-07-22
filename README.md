@@ -22,3 +22,4 @@ Firstly, the program takes in input two values:
  ## Insights
  To proper calculate minimum paths, the best algorithm is Dijkstra for sure. Some improvements were made to allow the algorithm to perform better. It has been tested with millions of graphs, calculating the chart in less than 1.5 seconds. 
  
+The algorithm calculates for each graph the sum of minimum paths. Then decides if to insert the graph in the chart. The data structure for the chart is a Max Heap in order to find immediatly (Time complexity: O(1)) the maximum value, if the new graph found is grater than the max, then is discarded.
